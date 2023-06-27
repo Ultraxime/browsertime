@@ -43,8 +43,12 @@ WORKDIR_GID=$(stat -c "%g" .)
 
 # Create user with the same UID and GID as the owner of the working directory, which will be used
 # to execute node. This is partly for security and partly so output files won't be owned by root.
-groupadd --non-unique --gid $WORKDIR_GID browsertime
-useradd --non-unique --uid $WORKDIR_UID --gid $WORKDIR_GID --home-dir /tmp browsertime
+if [[ $(getent group browsertime | wc -l) == 0 || $(getent group browsertime | cut -d: -f3) != $WORKDIR_GID ]]; then
+  groupadd --non-unique --gid $WORKDIR_GID browsertime
+fi
+if [[ $(getent passwd browsertime | wc -l) == 0 || $(getent passwd browsertime | cut -d: -f3) != $WORKDIR_UID || $(getent passwd browsertime | cut -d: -f4) != $WORKDIR_GID ]]; then
+  useradd --non-unique --uid $WORKDIR_UID --gid $WORKDIR_GID --home-dir /tmp browsertime
+fi
 
 # Need to explictly override the HOME directory to prevent dconf errors like:
 # (firefox:2003): dconf-CRITICAL **: 00:31:23.379: unable to create directory '/root/.cache/dconf': Permission denied.  dconf will not work properly.
